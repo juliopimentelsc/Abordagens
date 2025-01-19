@@ -1,25 +1,222 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head>
-    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Cadastro de Pessoas Abordadas</title>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Dados de Abordagens</title>
     <style>
-        / body {
+        body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
-            padding: 20px;} .container {
-            max-width: 600px;
-            margin: auto;
+            padding: 0;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+        header {
+            background-color: #007aff;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+        }
+        form, table, #login-page, #app-page {
+            max-width: 500px;
+            margin: 20px auto;
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);} h1 {
-            text-align: center;} label {
-            display: block;
-            margin: 10px 0 5px;} input[type="text"],        input[type="date"],        textarea,
-        input[type="file"] {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        form input, form textarea, form select, form button {
             width: 100%;
-            padding: 10px;
             margin-bottom: 10px;
+            padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box; /* Adiciona box-sizing para controle de largura*/}
+            font-size: 16px;
+        }
+        form button {
+            background: #007aff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        form button:hover {
+            background: #005bb5;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #007aff;
+            color: white;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Banco de Dados de Abordagens</h1>
+    </header>
+    <main>
+        <!-- Página de Login -->
+        <div id="login-page">
+            <h2>Bem-vindo</h2>
+            <p>Digite seu nome para acessar o sistema:</p>
+            <form id="login-form">
+                <input type="text" id="usuario-nome" placeholder="Seu Nome" required>
+                <button type="submit">Entrar</button>
+            </form>
+        </div>
+
+        <!-- Página do App -->
+        <div id="app-page" class="hidden">
+            <!-- Formulário para adicionar abordagens -->
+            <form id="abordagem-form">
+                <h2>Adicionar Abordagem</h2>
+                <input type="text" id="nome_completo" placeholder="Nome Completo" required>
+                <input type="date" id="data_nascimento" placeholder="Data de Nascimento" required>
+                <input type="text" id="alcunha" placeholder="Alcunha">
+                <textarea id="passagens_criminais" placeholder="Passagens Criminais"></textarea>
+
+                <!-- Pertence à facção -->
+                <label for="pertence_faccao">Pertence à Facção:</label>
+                <select id="pertence_faccao">
+                    <option value="0">Não</option>
+                    <option value="1">Sim</option>
+                </select>
+                <input type="text" id="nome_faccao" class="hidden" placeholder="Nome da Facção">
+
+                <!-- Posição Geográfica -->
+                <label for="posicao_geografica">Posição Geográfica:</label>
+                <input type="text" id="posicao_geografica" placeholder="Latitude, Longitude" readonly>
+                <button type="button" id="obter-posicao">Obter Posição Atual</button>
+
+                <input type="text" id="fotos" placeholder="URL das Fotos">
+                <textarea id="informacoes_adicionais" placeholder="Informações Adicionais"></textarea>
+                <button type="submit">Salvar Abordagem</button>
+            </form>
+
+            <!-- Tabela para listar pessoas abordadas -->
+            <table id="lista-abordagens">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Alcunha</th>
+                        <th>Facção</th>
+                        <th>Data da Abordagem</th>
+                        <th>Posição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dados serão carregados aqui dinamicamente -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        const loginPage = document.getElementById('login-page');
+        const appPage = document.getElementById('app-page');
+        const loginForm = document.getElementById('login-form');
+        const usuarioNomeInput = document.getElementById('usuario-nome');
+        const pertenceFaccaoSelect = document.getElementById('pertence_faccao');
+        const nomeFaccaoInput = document.getElementById('nome_faccao');
+        const posicaoInput = document.getElementById('posicao_geografica');
+        const obterPosicaoButton = document.getElementById('obter-posicao');
+        const abordagemForm = document.getElementById('abordagem-form');
+
+        // Login: Verifica o nome do usuário
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const usuarioNome = usuarioNomeInput.value.trim();
+            if (usuarioNome) {
+                alert(`Bem-vindo, ${usuarioNome}!`);
+                loginPage.classList.add('hidden');
+                appPage.classList.remove('hidden');
+            } else {
+                alert('Por favor, insira um nome válido.');
+            }
+        });
+
+        // Mostra ou esconde o campo "Nome da Facção" baseado na seleção
+        pertenceFaccaoSelect.addEventListener('change', (e) => {
+            if (e.target.value === '1') { // Se "Sim" for selecionado
+                nomeFaccaoInput.classList.remove('hidden');
+                nomeFaccaoInput.required = true;
+            } else { // Se "Não" for selecionado
+                nomeFaccaoInput.classList.add('hidden');
+                nomeFaccaoInput.required = false;
+                nomeFaccaoInput.value = ""; // Limpa o campo
+            }
+        });
+
+        // Obter posição geográfica do dispositivo
+        obterPosicaoButton.addEventListener('click', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+                        posicaoInput.value = `${latitude}, ${longitude}`;
+                    },
+                    (error) => {
+                        alert("Não foi possível obter a posição geográfica. Verifique as permissões de localização.");
+                    }
+                );
+            } else {
+                alert("Geolocalização não é suportada pelo seu navegador.");
+            }
+        });
+
+        // Função para salvar abordagens (substituir por API real)
+        abordagemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const novaAbordagem = {
+                nome_completo: document.getElementById('nome_completo').value,
+                data_nascimento: document.getElementById('data_nascimento').value,
+                alcunha: document.getElementById('alcunha').value,
+                passagens_criminais: document.getElementById('passagens_criminais').value,
+                pertence_faccao: pertenceFaccaoSelect.value === '1' ? nomeFaccaoInput.value : 'Não',
+                posicao_geografica: posicaoInput.value,
+                fotos: document.getElementById('fotos').value,
+                informacoes_adicionais: document.getElementById('informacoes_adicionais').value,
+                data_abordagem: new Date().toISOString(),
+            };
+
+            // Simula salvar em um banco (substituir por chamada à API)
+            console.log("Abordagem salva:", novaAbordagem);
+            carregarAbordagens();
+            abordagemForm.reset();
+            nomeFaccaoInput.classList.add('hidden'); // Oculta o campo "Nome da Facção"
+        });
+
+        // Função para carregar abordagens (substituir por API real)
+        function carregarAbordagens() {
+            const tbody = document.querySelector('#lista-abordagens tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td>João Silva</td>
+                    <td>João da Esquina</td>
+                    <td>Sim - Comando Vermelho</td>
+                    <td>2025-01-18</td>
+                    <td>-23.550520, -46.633308</td>
+                </tr>
+            `;
+        }
+
+        // Carregar dados ao iniciar
+        carregarAbordagens();
+    </script>
+</body>
+</html>
